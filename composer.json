@@ -1,0 +1,32 @@
+{
+	"name": "matthewpatterson/lore",
+	"description": "A library to ease the pain of working with LDAP",
+	"keywords": ["ldap"],
+	"license": "GPL-3.0",
+	"authors": [
+		{
+			"name": "Matthew Patterson",
+			"email": "matthew.s.patterson@gmail.com"
+		}
+	],
+	"repositories": [
+		{
+			"type": "git",
+			"url": "https://github.com/matthewpatterson/phpunit-mockfunction.git"
+		}
+	],
+	"require": {
+		"php": ">=5.3.0",
+		"ext-ldap": "*"
+	},
+	"require-dev": {
+		"phpunit/phpunit": "3.7.*",
+		"tcz/phpunit-mockfunction": "*"
+	},
+	"autoload": {
+		"psr-0": {
+			"Lore": "src/"
+		}
+	},
+	"minimum-stability": "dev"
+}

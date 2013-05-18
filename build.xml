@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Lore" default="check">
+
+	<target name="lint">
+		<phplint>
+			<fileset dir="src"/>
+			<fileset dir="tests"/>
+		</phplint>
+	</target>
+
+	<target name="codesniff">
+		<phpcodesniffer standard="PSR2" format="summary">
+			<formatter type="summary" usefile="false"/>
+			<fileset dir="src"/>
+			<fileset dir="tests"/>
+		</phpcodesniffer>
+	</target>
+
+	<target name="phpunit">
+		<delete dir="coverage"/>
+		<exec executable="phpunit" logoutput="true">
+			<arg line="--configuration=phpunit.xml"/>
+			<arg line="--testsuite=lore"/>
+			<arg line="--coverage-html=coverage"/>
+		</exec>
+	</target>
+
+	<target name="check" depends="lint,codesniff,phpunit"/>
+
+	<target name="docs">
+		<delete dir="doc"/>
+		<apigen source="src" destination="doc" title="Lore" deprecated="true" todo="true"/>
+	</target>
+
+</project>
