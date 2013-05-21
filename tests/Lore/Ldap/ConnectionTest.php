@@ -4,6 +4,71 @@ namespace Lore\Ldap;
 
 class ConnectionTest extends \Lore\BaseTest
 {
+    public function testConstructor()
+    {
+        $host = 'foobar.com';
+        $port = 389;
+
+        $connection = $this->getMock('\Lore\Ldap\Connection', array('open'));
+        $connection->expects($this->once())
+            ->method('open')
+            ->with($this->equalTo($host), $this->equalTo($port));
+
+        $connection->__construct($host, $port);
+    }
+
+    public function testBind()
+    {
+        $object = new Connection();
+
+        $bindDn = 'john.smith';
+        $passwd = 'Password1';
+
+        $bind = $this->getMockFunction('ldap_bind', $object);
+        $bind->expects($this->once())
+            ->with($this->anything(), $this->equalTo($bindDn), $this->equalTo($passwd))
+            ->will($this->returnValue(true));
+
+        $object->bind($bindDn, $passwd);
+
+        $this->assertTrue($object->isBound());
+    }
+
+    /**
+     * @expectedException \Lore\Ldap\Exception\LdapException
+     * @expectedExceptionMessage Could not bind
+     */
+    public function testBindFailure()
+    {
+        $object = new Connection();
+
+        $bindDn = 'john.smith';
+        $passwd = 'Password1';
+
+        $bind = $this->getMockFunction('ldap_bind', $object);
+        $bind->expects($this->once())
+            ->with($this->anything(), $this->equalTo($bindDn), $this->equalTo($passwd))
+            ->will($this->returnValue(false));
+
+        $error = $this->getMockFunction('ldap_error', $object);
+        $error->expects($this->once())
+            ->will($this->returnValue('Error message'));
+
+        $errno = $this->getMockFunction('ldap_errno', $object);
+        $errno->expects($this->once())
+            ->will($this->returnValue(999));
+
+        $object->bind($bindDn, $passwd);
+    }
+
+    public function testClose()
+    {
+        $object = $this->getMock('\Lore\Ldap\Connection', array('unbind'));
+        $object->expects($this->once())
+            ->method('unbind');
+
+        $object->close();
+    }
 
     public function testGetError()
     {
@@ -97,5 +162,52 @@ class ConnectionTest extends \Lore\BaseTest
             ->will($this->returnValue(999));
 
         $object->startTls();
+    }
+
+    public function testUnbind()
+    {
+        $object = new Connection();
+
+        $unbind = $this->getMockFunction('ldap_unbind', $object);
+        $unbind->expects($this->once())
+            ->will($this->returnValue(true));
+
+        $object->unbind();
+
+        $this->assertFalse($object->isBound());
+    }
+
+    /**
+     * @expectedException \Lore\Ldap\Exception\LdapException
+     * @expectedExceptionMessage Could not unbind
+     */
+    public function testUnbindFailure()
+    {
+        $object = new Connection();
+
+        $unbind = $this->getMockFunction('ldap_unbind', $object);
+        $unbind->expects($this->once())
+            ->will($this->returnValue(false));
+
+        $error = $this->getMockFunction('ldap_error', $object);
+        $error->expects($this->once())
+            ->will($this->returnValue('Error message'));
+
+        $errno = $this->getMockFunction('ldap_errno', $object);
+        $errno->expects($this->once())
+            ->will($this->returnValue(999));
+
+        $object->unbind();
+    }
+
+    public function testIsBound()
+    {
+        $object = new Connection();
+
+        $this->setInternal($object, 'bound', true);
+        $this->assertTrue($object->isBound());
+
+        $this->setInternal($object, 'bound', false);
+        $this->assertFalse($object->isBound());
     }
 }

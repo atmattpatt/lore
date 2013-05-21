@@ -11,6 +11,20 @@ class Connection
      */
     protected $link;
 
+    /**
+     * Whether or not we are bound to the LDAP directory
+     * @var boolean
+     */
+    protected $bound = false;
+
+    /**
+     * Class constructor
+     *
+     * Optionally opens a connection to the LDAP server
+     *
+     * @param string $host
+     * @param int $port
+     */
     public function __construct($host = null, $port = Ldap::LDAP_PORT)
     {
         if ($host !== null) {
@@ -18,14 +32,37 @@ class Connection
         }
     }
 
-    public function bind()
+    /**
+     * Binds to the LDAP directory
+     *
+     * @param string $bindDn
+     * @param string $password
+     * @return \Lore\Ldap\Connection
+     * @throws \Lore\Ldap\Exception\LdapException
+     */
+    public function bind($bindDn = null, $password = null)
     {
+        $result = @ldap_bind($this->link, $bindDn, $password);
 
+        if ($result === false) {
+            throw new Exception\LdapException('Could not bind: ' . $this->getError(), $this->getErrorCode());
+        }
+
+        $this->bound = true;
+
+        return $this;
     }
 
+    /**
+     * Alias for Connection::unbind()
+     *
+     * @return \Lore\Ldap\Connection
+     */
     public function close()
     {
+        $this->unbind();
 
+        return $this;
     }
 
     public function compare()
@@ -80,21 +117,49 @@ class Connection
 
     }
 
+    /**
+     * Upgrades the connection to TLS
+     *
+     * @return \Lore\Ldap\Connection
+     * @throws \Lore\Ldap\Exception\LdapException
+     */
     public function startTls()
     {
         $result = @ldap_start_tls($this->link);
+
         if ($result === false) {
             throw new Exception\LdapException('Could not start TLS: ' . $this->getError(), $this->getErrorCode());
         }
+
+        return $this;
     }
 
+    /**
+     * Unbinds from the LDAP directory
+     *
+     * @return \Lore\Ldap\Connection
+     * @throws \Lore\Ldap\Exception\LdapException
+     */
     public function unbind()
     {
+        $result = @ldap_unbind($this->link);
 
+        if ($result === false) {
+            throw new Exception\LdapException('Could not unbind ' . $this->getError(), $this->getErrorCode());
+        }
+
+        $this->bound = false;
+
+        return $this;
     }
 
+    /**
+     * Checks to see if we are bound to the LDAP directory
+     *
+     * @return boolean
+     */
     public function isBound()
     {
-
+        return $this->bound;
     }
 }
