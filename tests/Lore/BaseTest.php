@@ -6,40 +6,51 @@ abstract class BaseTest extends \PHPUnit_Framework_TestCase
 {
 
     /**
-     * Test set up method
+     * Invokes an internal class method
      *
-     * Verifies that the runkit extension is loaded
+     * @param object $object
+     * @param string $name
+     * @param mixed $args
+     * @return mixed
      */
-    protected function setUp()
+    protected function invokeInternal($object, $name, $args = array())
     {
-        if (!extension_loaded('runkit')) {
-            $this->markTestSkipped('Extension runkit not available');
+        if (func_num_args() > 3 || !is_array($args)) {
+            $args = array_splice(func_get_args(), 2);
         }
-    }
 
-    /**
-     * Shortcut to mock a function
-     *
-     * @param string $functionName
-     * @param object $scopeObject
-     * @return \PHPUnit_Extensions_MockFunction
-     */
-    protected function getMockFunction($functionName, $scopeObject)
-    {
-        return new \PHPUnit_Extensions_MockFunction($functionName, $scopeObject);
+        $method = new \ReflectionMethod(get_class($object), $name);
+        $method->setAccessible(true);
+
+        return $method->invokeArgs($object, $args);
     }
 
     /**
      * Sets the value of an internal class property
      *
      * @param object $object
-     * @param string $attribute
+     * @param string $name
      * @param mixed $value
      */
-    protected function setInternal($object, $attribute, $value)
+    protected function setInternal($object, $name, $value)
     {
-        $property = new \ReflectionProperty(get_class($object), $attribute);
+        $property = new \ReflectionProperty(get_class($object), $name);
         $property->setAccessible(true);
         $property->setValue($object, $value);
+    }
+
+    /**
+     * Gets the value of an internal class property
+     *
+     * @param object $object
+     * @param string $name
+     * @return mixed
+     */
+    protected function getInternal($object, $name)
+    {
+        $property = new \ReflectionProperty(get_class($object), $name);
+        $property->setAccessible(true);
+
+        return $property->getValue($object);
     }
 }

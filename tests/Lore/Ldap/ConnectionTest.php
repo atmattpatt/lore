@@ -2,7 +2,7 @@
 
 namespace Lore\Ldap;
 
-class ConnectionTest extends \Lore\BaseTest
+class ConnectionTest extends \Lore\BaseMockFunctionTest
 {
     public function testConstructor()
     {
