@@ -2,7 +2,7 @@
 
 namespace Lore\Ldap;
 
-class QueryTest extends \Lore\BaseTest
+class QueryTest extends \Lore\BaseMockFunctionTest
 {
     /**
      * Object under test
@@ -24,6 +24,68 @@ class QueryTest extends \Lore\BaseTest
         $object = new Query($connection);
 
         $this->assertAttributeSame($connection, 'link', $object);
+    }
+
+    public function testAttribute()
+    {
+        $expected = array('givenName' => true);
+
+        $this->object->attribute('givenName');
+        $this->assertAttributeContains($expected, 'attributes', $this->object);
+
+        $this->object->attribute('givenName', false);
+        $this->assertAttributeNotContains($expected, 'attributes', $this->object);
+    }
+
+    public function testAttributesOnly()
+    {
+        $this->object->attributesOnly();
+        $this->assertAttributeEquals(1, 'attributesOnly', $this->object);
+
+        $this->object->attributesOnly(false);
+        $this->assertAttributeEquals(0, 'attributesOnly', $this->object);
+    }
+
+    public function testLimit()
+    {
+        $expected = 20;
+
+        $this->object->limit($expected);
+        $this->assertAttributeEquals($expected, 'limit', $this->object);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Invalid value -1 for LDAP query limit
+     */
+    public function testLimitInvalidArgument()
+    {
+        $this->object->limit(-1);
+    }
+
+    public function testSearchBase()
+    {
+        $expected = 'ou=People,dc=acme,dc=com';
+
+        $this->object->searchBase($expected);
+        $this->assertAttributeEquals($expected, 'base', $this->object);
+    }
+
+    public function testTimeout()
+    {
+        $expected = 60;
+
+        $this->object->timeout($expected);
+        $this->assertAttributeEquals($expected, 'timeout', $this->object);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Invalid value -1 for LDAP query timeout
+     */
+    public function testTimeoutInvalidArgument()
+    {
+        $this->object->timeout(-1);
     }
 
     public function testWhere()
@@ -60,6 +122,35 @@ class QueryTest extends \Lore\BaseTest
 
         $this->assertAttributeContains($condition1, 'conditions', $logicalOr);
         $this->assertAttributeContains($condition2, 'conditions', $logicalOr);
+    }
+
+    public function testDereferenceNever()
+    {
+        $this->object->dereferenceNever();
+        $this->assertAttributeEquals(LDAP_DEREF_NEVER, 'aliasDeref', $this->object);
+    }
+
+    public function testDereferenceSearching()
+    {
+        $this->object->dereferenceSearching();
+        $this->assertAttributeEquals(LDAP_DEREF_SEARCHING, 'aliasDeref', $this->object);
+    }
+
+    public function testDereferenceFinding()
+    {
+        $this->object->dereferenceFinding();
+        $this->assertAttributeEquals(LDAP_DEREF_FINDING, 'aliasDeref', $this->object);
+    }
+
+    public function testDereferenceAlways()
+    {
+        $this->object->dereferenceAlways();
+        $this->assertAttributeEquals(LDAP_DEREF_ALWAYS, 'aliasDeref', $this->object);
+    }
+
+    public function testQuery()
+    {
+
     }
 
     public function testAllOf()

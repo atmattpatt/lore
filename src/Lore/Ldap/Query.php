@@ -2,6 +2,7 @@
 
 namespace Lore\Ldap;
 
+use InvalidArgumentException;
 use Lore\Ldap\Condition\QueryConditionInterface;
 
 class Query
@@ -14,10 +15,46 @@ class Query
     protected $link;
 
     /**
+     * An array of attributes to return
+     * @var array
+     */
+    protected $attributes = array();
+
+    /**
+     * Whether or not to return attributes only
+     * @var int
+     */
+    protected $attributesOnly = 0;
+
+    /**
+     * The search base DN
+     * @var string
+     */
+    protected $base;
+
+    /**
      * The current query condition
      * @var \Lore\Ldap\Condition\QueryConditionInterface|null
      */
     protected $condition = null;
+
+    /**
+     * How to handle aliases during the search
+     * @var int
+     */
+    protected $aliasDeref = LDAP_DEREF_NEVER;
+
+    /**
+     * The maximum number of entries to fetch; 0 means no limit
+     * @var int
+     */
+    protected $limit = 0;
+
+    /**
+     * The number of sends to spend searching; 0 means no timeout
+     * @var int
+     */
+    protected $timeout = 0;
 
     /**
      * Class constructor
@@ -27,6 +64,93 @@ class Query
     public function __construct(Connection $link)
     {
         $this->link = $link;
+    }
+
+    /**
+     * Sets whether or not an attribute should be returned in the search result
+     *
+     * @param string $attribute
+     * @param boolean $required
+     * @return \Lore\Ldap\Query
+     */
+    public function attribute($attribute, $required = true)
+    {
+        $this->attributes[$attribute] = ($required === true);
+
+        return $this;
+    }
+
+    /**
+     * Sets whether or not the return attributes types only instead of attribute
+     * types and values
+     *
+     * @param boolean $attrsonly
+     * @return \Lore\Ldap\Query
+     */
+    public function attributesOnly($attrsonly = true)
+    {
+        $this->attributesOnly = ($attrsonly === true) ? 1 : 0;
+
+        return $this;
+    }
+
+    /**
+     * Sets the maximum number of entries to fetch
+     *
+     * @param int $limit Zero means no limit
+     * @return \Lore\Ldap\Query
+     * @throws InvalidArgumentException
+     */
+    public function limit($limit = 0)
+    {
+        if ($limit < 0) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Invalid value %d for LDAP query limit; value must be at least zero',
+                    $limit
+                )
+            );
+        }
+
+        $this->limit = $limit;
+
+        return $this;
+    }
+
+    /**
+     * Sets the base DN for the search
+     *
+     * @param string $base
+     * @return \Lore\Ldap\Query
+     */
+    public function searchBase($base = '')
+    {
+        $this->base = $base;
+
+        return $this;
+    }
+
+    /**
+     * Sets the maximum number of seconds to spend searching
+     *
+     * @param int $timeout Zero means no limit
+     * @return \Lore\Ldap\Query
+     * @throws InvalidArgumentException
+     */
+    public function timeout($timeout = 0)
+    {
+        if ($timeout < 0) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Invalid value %d for LDAP query timeout; value must be at least zero',
+                    $timeout
+                )
+            );
+        }
+
+        $this->timeout = $timeout;
+
+        return $this;
     }
 
     /**
@@ -66,6 +190,102 @@ class Query
         $this->condition = new Condition\LogicalOr(array($this->condition, $condition));
 
         return $this;
+    }
+
+    /**
+     * Never dereference aliases
+     *
+     * @return \Lore\Ldap\Query
+     */
+    public function dereferenceNever()
+    {
+        $this->aliasDeref = LDAP_DEREF_NEVER;
+
+        return $this;
+    }
+
+    /**
+     * Dereference aliases during the search but not when locating the base object of the search
+     *
+     * @return \Lore\Ldap\Query
+     */
+    public function dereferenceSearching()
+    {
+        $this->aliasDeref = LDAP_DEREF_SEARCHING;
+
+        return $this;
+    }
+
+    /**
+     * Dereferences aliases when locating the base object but not during the search
+     *
+     * @return \Lore\Ldap\Query
+     */
+    public function dereferenceFinding()
+    {
+        $this->aliasDeref = LDAP_DEREF_FINDING;
+
+        return $this;
+    }
+
+    /**
+     * Always dereference aliases
+     *
+     * @return \Lore\Ldap\Query
+     */
+    public function dereferenceAlways()
+    {
+        $this->aliasDeref = LDAP_DEREF_ALWAYS;
+
+        return $this;
+    }
+
+    public function query()
+    {
+        // Base DN is required
+        if (strlen($this->base) == 0) {
+            /**
+             * @todo throw exception
+             */
+        }
+
+        // Assemble filter
+        $filter = '';
+        if ($this->condition instanceof QueryConditionInterface) {
+            $filter = $this->condition->assemble();
+        }
+
+        $attributes = array();
+        foreach ($this->attributes as $attribute => $require) {
+            if ($require) {
+                $attributes[] = $attribute;
+            }
+        }
+
+        if (empty($attributes)) {
+            $attributes = null;
+        }
+
+        $result = @ldap_search(
+            $this->link,
+            $this->base,
+            $filter,
+            $attributes,
+            $this->attributesOnly,
+            $this->limit,
+            $this->timeout,
+            $this->aliasDeref
+        );
+
+        if ($result === false) {
+            /**
+             * @todo throw exception
+             */
+        }
+
+        /**
+         * @todo Parse the result set
+         */
     }
 
     /**
