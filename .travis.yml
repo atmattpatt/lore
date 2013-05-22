@@ -1,8 +1,10 @@
 language: php
 
 before_script:
+  - sudo pecl install runkit
   - composer install
 
 php:
   - 5.3
   - 5.4
+  - 5.5
