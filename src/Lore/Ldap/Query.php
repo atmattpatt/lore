@@ -244,9 +244,7 @@ class Query
     {
         // Base DN is required
         if (strlen($this->base) == 0) {
-            /**
-             * @todo throw exception
-             */
+            throw new Exception\QueryException('Search base DN is empty');
         }
 
         // Assemble filter
@@ -262,12 +260,8 @@ class Query
             }
         }
 
-        if (empty($attributes)) {
-            $attributes = null;
-        }
-
         $result = @ldap_search(
-            $this->link,
+            $this->link->getLink(),
             $this->base,
             $filter,
             $attributes,
@@ -278,14 +272,13 @@ class Query
         );
 
         if ($result === false) {
-            /**
-             * @todo throw exception
-             */
+            throw new Exception\QueryException(
+                'LDAP query failed: ' . $this->link->getError(),
+                $this->link->getErrorCode()
+            );
         }
 
-        /**
-         * @todo Parse the result set
-         */
+        return new ResultSet($this->link, $result);
     }
 
     /**

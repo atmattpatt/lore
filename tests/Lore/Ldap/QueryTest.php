@@ -150,7 +150,70 @@ class QueryTest extends \Lore\BaseMockFunctionTest
 
     public function testQuery()
     {
+        $search = $this->getMockFunction('ldap_search', $this->object);
+        $search->expects($this->once())
+            ->with(
+                $this->anything(),
+                $this->equalTo('dc=foobar,dc=com'),
+                $this->equalTo('(&(objectClass=inetOrgPerson)(mail=*))'),
+                $this->equalTo(array('sn', 'givenName', 'mail')),
+                $this->equalTo(0),
+                $this->equalTo(100),
+                $this->equalTo(60),
+                $this->equalTo(LDAP_DEREF_ALWAYS)
+            )
+            ->will($this->returnValue('resource'));
 
+        $this->object
+            ->searchBase('dc=foobar,dc=com')
+            ->where($this->object->equals('objectClass', 'inetOrgPerson'))
+            ->andWhere($this->object->exists('mail'))
+            ->attribute('sn')
+            ->attribute('givenName')
+            ->attribute('mail')
+            ->limit(100)
+            ->timeout(60)
+            ->dereferenceAlways();
+
+        $result = $this->object->query();
+
+        $this->assertInstanceOf('\Lore\Ldap\ResultSet', $result);
+        $this->assertAttributeSame($this->getInternal($this->object, 'link'), 'link', $result);
+    }
+
+    /**
+     * @expectedException \Lore\Ldap\Exception\QueryException
+     * @expectedExceptionMessage Search base DN is empty
+     */
+    public function testQueryNoBaseDn()
+    {
+        $this->object->searchBase('');
+        $this->object->query();
+    }
+
+    /**
+     * @expectedException \Lore\Ldap\Exception\QueryException
+     * @expectedExceptionMessage LDAP query failed
+     * @expectedExceptionCode 999
+     */
+    public function testQueryFailure()
+    {
+        $connection = $this->getMock('\Lore\Ldap\Connection', array('getError', 'getErrorCode'));
+        $connection->expects($this->once())
+            ->method('getError')
+            ->will($this->returnValue('Test error'));
+        $connection->expects($this->once())
+            ->method('getErrorCode')
+            ->will($this->returnValue(999));
+
+        $object = new Query($connection);
+
+        $search = $this->getMockFunction('ldap_search', $object);
+        $search->expects($this->once())
+            ->will($this->returnValue(false));
+
+        $object->searchBase('dc=foobar,dc=com');
+        $object->query();
     }
 
     public function testAllOf()

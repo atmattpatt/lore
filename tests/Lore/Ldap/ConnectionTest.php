@@ -210,4 +210,12 @@ class ConnectionTest extends \Lore\BaseMockFunctionTest
         $this->setInternal($object, 'bound', false);
         $this->assertFalse($object->isBound());
     }
+
+    public function getsGetLink()
+    {
+        $object = new Connection();
+
+        $this->setInternal($object, 'link', 'resource');
+        $this->assertEquals('resource', $object->getLink());
+    }
 }

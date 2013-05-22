@@ -162,4 +162,14 @@ class Connection
     {
         return $this->bound;
     }
+
+    /**
+     * Gets the link identifier for LDAP connection
+     *
+     * @return resource
+     */
+    public function getLink()
+    {
+        return $this->link;
+    }
 }
