@@ -1,7 +1,7 @@
 language: php
 
 before_script:
-  - sudo pecl install runkit
+  - pecl install channel://pecl.php.net/runkit-0.9
   - composer install
 
 php:
