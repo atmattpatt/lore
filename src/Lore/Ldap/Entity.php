@@ -2,8 +2,16 @@
 
 namespace Lore\Ldap;
 
+use Lore\Ldap\Exception\InvalidAttributeException;
+
 class Entity
 {
+
+    /**
+     * The entity's distinguished name
+     * @var string
+     */
+    private $dn;
 
     /**
      * An array of attributes currently assigned to the entity
@@ -32,6 +40,29 @@ class Entity
     private $loaded = false;
 
     /**
+     * Sets the entity's distinguished name
+     *
+     * @param string $dn
+     * @return \Lore\Ldap\Entity
+     */
+    public function setDn($dn)
+    {
+        $this->dn = $dn;
+
+        return $this;
+    }
+
+    /**
+     * Gets the entity's distinguished name
+     *
+     * @return string
+     */
+    public function getDn()
+    {
+        return $this->dn;
+    }
+
+    /**
      * Adds a new attribute to the entity
      *
      * @param string $attribute
@@ -44,6 +75,11 @@ class Entity
         // Cast value to array
         if (!is_array($value)) {
             $value = array($value);
+        }
+
+        // Check that we aren't trying to set th DN this way
+        if ($attribute == 'dn') {
+            throw new InvalidAttributeException('Cannot add attribute dn; use setDn() instead');
         }
 
         if (isset($this->deletedAttributes[$attribute])) {
@@ -203,7 +239,7 @@ class Entity
      */
     public function toArray()
     {
-        $output = array();
+        $output = array('dn' => $this->getDn());
         foreach ($this->attributes as $attribute => $values) {
             $output[$attribute] = $values->toArray();
         }

@@ -35,6 +35,15 @@ class EntityTest extends \Lore\BaseTest
         $this->assertAttributeEquals($expectedAddedAttributes, 'addedAttributes', $this->object);
     }
 
+    /**
+     * @expectedException \Lore\Ldap\Exception\InvalidAttributeException
+     * @expectedExceptionMessage Cannot add attribute dn
+     */
+    public function testAddAttributePreventsDnChange()
+    {
+        $this->object->addAttribute('dn', array());
+    }
+
     public function testAddAttributePreviouslyDeleted()
     {
         $this->object->addAttribute('foo', 'bar');
@@ -135,6 +144,7 @@ class EntityTest extends \Lore\BaseTest
     public function testToArray()
     {
         $expected = array(
+            'dn' => 'cn=nobody,dc=foobar,dc=com',
             'foo' => array(
                 0 => 'apple',
                 1 => 'banana',
@@ -145,6 +155,7 @@ class EntityTest extends \Lore\BaseTest
             ),
         );
 
+        $this->object->setDn('cn=nobody,dc=foobar,dc=com');
         $this->object->addAttribute('foo', array('apple', 'banana'));
         $this->object->addAttribute('bar', array('orange', 'grapefruit'));
 

@@ -113,6 +113,9 @@ class ResultSet implements \Iterator
     {
         $entity = new Entity();
 
+        $dn = ldap_get_dn($this->link->getLink(), $entry);
+        $entity->setDn($dn);
+
         $attr = ldap_first_attribute($this->link->getLink(), $entry);
         $values = ldap_get_values($this->link->getLink(), $entry, $attr);
         unset($values['count']);
